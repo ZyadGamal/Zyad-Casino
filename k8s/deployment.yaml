@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zyad-casino
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: zyad-casino
+  template:
+    metadata:
+      labels:
+        app: zyad-casino
+    spec:
+      containers:
+      - name: web
+        image: zyadcasino/web:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - secretRef:
+            name: zyad-casino-secrets
+        - configMapRef:
+            name: zyad-casino-config
+        readinessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health/
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      - name: celery
+        image: zyadcasino/web:latest
+        command: ["celery", "-A", "config", "worker", "-l", "info"]
+        envFrom:
+        - secretRef:
+            name: zyad-casino-secrets
+        - configMapRef:
+            name: zyad-casino-config
