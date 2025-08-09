@@ -1,0 +1,35 @@
+// ألوان المشروع
+$primary: #4e73df;
+$secondary: #858796;
+$success: #1cc88a;
+$info: #36b9cc;
+$warning: #f6c23e;
+$danger: #e74a3b;
+$light: #f8f9fc;
+$dark: #5a5c69;
+
+// ألوان الكازينو
+$casino-red: #d62c1a;
+$casino-black: #1a1a1a;
+$casino-gold: #d4af37;
+
+// أحجام الخطوط
+$font-size-base: 0.9rem;
+$font-size-lg: $font-size-base * 1.25;
+$font-size-sm: $font-size-base * 0.875;
+
+// المسافات
+$spacer: 1rem;
+$spacers: (
+    0: 0,
+    1: $spacer * 0.25,
+    2: $spacer * 0.5,
+    3: $spacer,
+    4: $spacer * 1.5,
+    5: $spacer * 3,
+);
+
+// حدود
+$border-radius: 0.35rem;
+$border-radius-lg: 0.5rem;
+$border-radius-sm: 0.25rem;

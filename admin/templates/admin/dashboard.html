@@ -1,0 +1,162 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="page-title">لوحة التحكم الإدارية</h1>
+        <div class="last-updated">
+            <span class="text-muted">آخر تحديث: {{ "now"|date('Y-m-d H:i') }}</span>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title text-primary">المستخدمون</h3>
+                            <div class="stat-value">{{ stats.total_users|number_format }}</div>
+                        </div>
+                        <div class="icon-circle bg-primary">
+                            <i class="fas fa-users text-white"></i>
+                        </div>
+                    </div>
+                    <div class="stat-detail mt-2">
+                        <span class="text-success">{{ stats.active_users|number_format }}</span> مستخدم نشط
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm border-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title text-danger">النشاط المشبوه</h3>
+                            <div class="stat-value">{{ stats.suspicious_activities|number_format }}</div>
+                        </div>
+                        <div class="icon-circle bg-danger">
+                            <i class="fas fa-shield-alt text-white"></i>
+                        </div>
+                    </div>
+                    <div class="stat-detail mt-2">
+                        <span class="text-warning">{{ stats.unresolved_alerts|number_format }}</span> غير محلولة
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h3 class="card-title text-success">أداء النظام</h3>
+                            <div class="stat-value">{{ stats.cpu_usage }}%</div>
+                        </div>
+                        <div class="icon-circle bg-success">
+                            <i class="fas fa-tachometer-alt text-white"></i>
+                        </div>
+                    </div>
+                    <div class="stat-detail mt-2">
+                        ذاكرة: <span class="text-info">{{ stats.memory_usage }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h3 class="card-title">آخر العمليات</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>المستخدم</th>
+                                    <th>النوع</th>
+                                    <th>المبلغ</th>
+                                    <th>الحالة</th>
+                                    <th>الوقت</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tx in stats.recent_transactions %}
+                                <tr>
+                                    <td>
+                                        <a href="/admin/users/{{ tx.user.id }}">{{ tx.user.username }}</a>
+                                    </td>
+                                    <td>{{ tx.type }}</td>
+                                    <td class="{{ tx.amount >= 0 ? 'text-success' : 'text-danger' }}">
+                                        {{ tx.amount|number_format(2) }}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ tx.status == 'completed' ? 'success' : 'warning' }}">
+                                            {{ tx.status }}
+                                        </span>
+                                    </td>
+                                    <td>{{ tx.timestamp|date('H:i') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h3 class="card-title">آخر التنبيهات</h3>
+                </div>
+                <div class="card-body alert-list">
+                    {% for alert in stats.recent_alerts %}
+                    <div class="alert alert-{{ alert.severity }} mb-2">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ alert.type }}</strong>
+                            <small>{{ alert.time|date('H:i') }}</small>
+                        </div>
+                        <div class="text-muted small">{{ alert.message }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="card-footer text-center">
+                    <a href="/admin/security/alerts" class="btn btn-sm btn-outline-info">
+                        عرض الكل <i class="fas fa-arrow-left"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-container {
+    padding: 20px;
+}
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+.icon-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+.alert-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+</style>
+{% endblock %}

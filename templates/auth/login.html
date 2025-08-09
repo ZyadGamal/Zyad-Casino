@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>تسجيل الدخول</title>
+</head>
+<body>
+    <h2>تسجيل الدخول</h2>
+    <form method="POST">
+        <input type="email" name="email" placeholder="البريد الالكتروني" required><br>
+        <input type="password" name="password" placeholder="كلمة السر" required><br>
+        <button type="submit">دخول</button>
+    </form>
+    <p>ما عندكش حساب؟ <a href="{{ url_for('auth.register') }}">سجل من هنا</a></p>
+</body>
+</html>

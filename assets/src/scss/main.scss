@@ -1,0 +1,52 @@
+// متغيرات التصميم المشتركة
+@import 'variables';
+
+// أنماط أساسية
+body {
+    font-family: 'Tajawal', sans-serif;
+}
+
+// دعم RTL
+[dir="rtl"] {
+    .text-left {
+        text-align: right !important;
+    }
+    
+    .text-right {
+        text-align: left !important;
+    }
+    
+    .ml-auto {
+        margin-left: 0 !important;
+        margin-right: auto !important;
+    }
+    
+    .mr-auto {
+        margin-right: 0 !important;
+        margin-left: auto !important;
+    }
+}
+
+// أنماط مخصصة للمشروع
+.casino-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    
+    &-header {
+        background: linear-gradient(to right, $primary, $info);
+        color: white;
+        padding: 15px;
+        border-radius: 10px 10px 0 0 !important;
+    }
+}
+
+// أنماط لوحة التحكم
+.admin-dashboard {
+    .stat-card {
+        transition: transform 0.3s;
+        
+        &:hover {
+            transform: translateY(-5px);
+        }
+    }
+}

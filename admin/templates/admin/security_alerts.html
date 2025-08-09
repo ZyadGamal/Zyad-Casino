@@ -1,0 +1,214 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="security-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="page-title">تنبيهات الأمان</h1>
+        
+        <div class="alert-filters d-flex gap-2">
+            <select id="severity-filter" class="form-select">
+                <option value="all">جميع المستويات</option>
+                <option value="high">عالي</option>
+                <option value="medium">متوسط</option>
+                <option value="low">منخفض</option>
+            </select>
+            
+            <select id="resolved-filter" class="form-select">
+                <option value="unresolved">غير محلول فقط</option>
+                <option value="all">الكل</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>النوع</th>
+                            <th>المستخدم</th>
+                            <th>عنوان IP</th>
+                            <th>المستوى</th>
+                            <th>الوقت</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for alert in alerts %}
+                        <tr data-alert-id="{{ alert.id }}" 
+                            class="alert-row severity-{{ alert.severity }} {% if alert.resolved %}table-secondary{% endif %}">
+                            <td>{{ alert.activity_type }}</td>
+                            <td>
+                                {% if alert.user %}
+                                <a href="/admin/users/{{ alert.user.id }}">{{ alert.user.username }}</a>
+                                {% else %}
+                                غير معروف
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="#" class="ip-link" data-bs-toggle="tooltip" 
+                                   title="الموقع الجغرافي: {{ alert.geo_location }}">
+                                    {{ alert.ip_address }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ alert.severity }}">
+                                    {{ alert.severity|upper }}
+                                </span>
+                            </td>
+                            <td>{{ alert.created_at|date('Y-m-d H:i') }}</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    {% if not alert.resolved %}
+                                    <button class="btn btn-sm btn-success" 
+                                            onclick="resolveAlert('{{ alert.id }}')">
+                                        <i class="fas fa-check"></i> حل
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" 
+                                            onclick="banIP('{{ alert.ip_address }}')">
+                                        <i class="fas fa-ban"></i> حظر
+                                    </button>
+                                    {% else %}
+                                    <span class="text-muted">تم الحل</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function resolveAlert(alertId) {
+    if (confirm('هل أنت متأكد من رغبتك في حل هذا التنبيه؟')) {
+        fetch(`/admin/security/alerts/${alertId}/resolve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '{{ csrf_token() }}'
+            }
+        }).then(response => {
+            if (response.ok) {
+                showToast('success', 'تم حل التنبيه بنجاح');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('error', 'حدث خطأ أثناء حل التنبيه');
+            }
+        }).catch(error => {
+            showToast('error', 'حدث خطأ في الاتصال');
+            console.error('Error:', error);
+        });
+    }
+}
+
+function banIP(ipAddress) {
+    const reason = prompt("الرجاء إدخال سبب الحظر:", "نشاط مشبوه");
+    if (reason) {
+        fetch('/admin/security/ban', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                ip: ipAddress,
+                reason: reason
+            })
+        }).then(response => {
+            if (response.ok) {
+                showToast('success', 'تم حظر العنوان IP بنجاح');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('error', 'حدث خطأ أثناء حظر العنوان IP');
+            }
+        }).catch(error => {
+            showToast('error', 'حدث خطأ في الاتصال');
+            console.error('Error:', error);
+        });
+    }
+}
+
+function showToast(type, message) {
+    // يمكنك استخدام مكتبة مثل Toastify.js أو Bootstrap Toast هنا
+    const toast = document.createElement('div');
+    toast.className = `toast show align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'}`;
+    toast.style.position = 'fixed';
+    toast.style.bottom = '20px';
+    toast.style.left = '50%';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.zIndex = '9999';
+    
+    toast.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                ${message}
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" 
+                    onclick="this.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 5000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // تفعيل أدوات التلميح
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // تصفية الجدول حسب المستوى
+    document.getElementById('severity-filter').addEventListener('change', function() {
+        const severity = this.value;
+        document.querySelectorAll('.alert-row').forEach(row => {
+            row.style.display = (severity === 'all' || row.classList.contains(`severity-${severity}`)) 
+                ? '' : 'none';
+        });
+    });
+    
+    // تصفية حسب حالة الحل
+    document.getElementById('resolved-filter').addEventListener('change', function() {
+        const filter = this.value;
+        document.querySelectorAll('.alert-row').forEach(row => {
+            const isResolved = row.classList.contains('table-secondary');
+            row.style.display = (filter === 'all' || (filter === 'unresolved' && !isResolved)) 
+                ? '' : 'none';
+        });
+    });
+});
+</script>
+
+<style>
+.security-container {
+    padding: 20px;
+}
+.severity-badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+.bg-high {
+    background-color: #dc3545;
+    color: white;
+}
+.bg-medium {
+    background-color: #fd7e14;
+    color: white;
+}
+.bg-low {
+    background-color: #ffc107;
+    color: black;
+}
+.toast {
+    min-width: 300px;
+}
+</style>
+{% endblock %}

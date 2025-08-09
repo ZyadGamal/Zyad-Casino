@@ -1,0 +1,27 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # منع الوصول المباشر إلى ملفات PHP في مجلد includes
+    RewriteRule ^includes/ - [F,L]
+    
+    # منع تصفح الدلائل
+    Options -Indexes
+    
+    # حماية ملفات حساسة
+    <FilesMatch "\.(env|log|htaccess)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+    
+    # إعادة التوجيه إلى HTTPS إذا كان متاحاً
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# تعطيل تنفيذ PHP في مجلدات معينة
+<Files *.php>
+    Deny from all
+</Files>
+<Files index.php>
+    Allow from all
+</Files>

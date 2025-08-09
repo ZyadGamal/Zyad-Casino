@@ -1,0 +1,231 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="users-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="page-title">إدارة المستخدمين</h1>
+        
+        <div class="user-actions">
+            <a href="/admin/users/create" class="btn btn-primary">
+                <i class="fas fa-plus"></i> مستخدم جديد
+            </a>
+        </div>
+    </div>
+    
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="user-filters mb-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" id="user-search" class="form-control" 
+                               placeholder="بحث بالاسم أو البريد...">
+                    </div>
+                    <div class="col-md-3">
+                        <select id="status-filter" class="form-select">
+                            <option value="all">جميع المستخدمين</option>
+                            <option value="active">نشط فقط</option>
+                            <option value="banned">محظور</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="role-filter" class="form-select">
+                            <option value="all">جميع الصلاحيات</option>
+                            <option value="user">مستخدم عادي</option>
+                            <option value="admin">مدير</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>اسم المستخدم</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>الحالة</th>
+                            <th>الصلاحية</th>
+                            <th>تاريخ التسجيل</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr data-user-id="{{ user.id }}" 
+                            data-status="{{ 'active' if user.is_active else 'inactive' }}"
+                            data-role="{{ user.role }}">
+                            <td>{{ user.id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ user.avatar_url|default('/static/images/default-avatar.png') }}" 
+                                         class="rounded-circle me-2" width="30" height="30" alt="{{ user.username }}">
+                                    {{ user.username }}
+                                </div>
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="badge rounded-pill bg-{{ 'success' if user.is_active else 'secondary' }}">
+                                    {{ 'نشط' if user.is_active else 'غير نشط' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill bg-{{ 'primary' if user.role == 'admin' else 'info' }}">
+                                    {{ 'مدير' if user.role == 'admin' else 'مستخدم' }}
+                                </span>
+                            </td>
+                            <td>{{ user.created_at|date('Y-m-d') }}</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-info" onclick="viewUser('{{ user.id }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" onclick="editUser('{{ user.id }}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    {% if user.is_active %}
+                                    <button class="btn btn-sm btn-danger" onclick="banUser('{{ user.id }}')">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-success" onclick="unbanUser('{{ user.id }}')">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.prev_num }}">السابق</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page in pagination.iter_pages() %}
+                    <li class="page-item {% if page == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="?page={{ page }}">{{ page }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ pagination.next_num }}">التالي</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewUser(userId) {
+    window.location.href = `/admin/users/${userId}`;
+}
+
+function editUser(userId) {
+    window.location.href = `/admin/users/${userId}/edit`;
+}
+
+function banUser(userId) {
+    if (confirm('هل أنت متأكد من حظر هذا المستخدم؟')) {
+        fetch(`/admin/users/${userId}/ban`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '{{ csrf_token() }}'
+            }
+        }).then(response => {
+            if (response.ok) {
+                showToast('success', 'تم حظر المستخدم بنجاح');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showToast('error', 'حدث خطأ أثناء حظر المستخدم');
+            }
+        }).catch(error => {
+            showToast('error', 'حدث خطأ في الاتصال');
+            console.error('Error:', error);
+        });
+    }
+}
+
+function unbanUser(userId) {
+    fetch(`/admin/users/${userId}/unban`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '{{ csrf_token() }}'
+        }
+    }).then(response => {
+        if (response.ok) {
+            showToast('success', 'تم إلغاء حظر المستخدم بنجاح');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast('error', 'حدث خطأ أثناء إلغاء الحظر');
+        }
+    }).catch(error => {
+        showToast('error', 'حدث خطأ في الاتصال');
+        console.error('Error:', error);
+    });
+}
+
+// تصفية الجدول
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('user-search');
+    const statusFilter = document.getElementById('status-filter');
+    const roleFilter = document.getElementById('role-filter');
+    
+    function filterUsers() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const status = statusFilter.value;
+        const role = roleFilter.value;
+        
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const username = row.cells[1].textContent.toLowerCase();
+            const email = row.cells[2].textContent.toLowerCase();
+            const rowStatus = row.getAttribute('data-status');
+            const rowRole = row.getAttribute('data-role');
+            
+            const matchesSearch = username.includes(searchTerm) || email.includes(searchTerm);
+            const matchesStatus = status === 'all' || 
+                (status === 'active' && rowStatus === 'active') || 
+                (status === 'banned' && rowStatus === 'inactive');
+            const matchesRole = role === 'all' || 
+                (role === 'admin' && rowRole === 'admin') || 
+                (role === 'user' && rowRole === 'user');
+            
+            row.style.display = (matchesSearch && matchesStatus && matchesRole) ? '' : 'none';
+        });
+    }
+    
+    searchInput.addEventListener('input', filterUsers);
+    statusFilter.addEventListener('change', filterUsers);
+    roleFilter.addEventListener('change', filterUsers);
+});
+
+function showToast(type, message) {
+    // يمكنك استخدام مكتبة مثل Toastify.js أو Bootstrap Toast هنا
+    console.log(`${type}: ${message}`);
+    alert(message); // حل مؤقت حتى يتم تنفيذ نظام Toast
+}
+</script>
+
+<style>
+.users-container {
+    padding: 20px;
+}
+.user-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+</style>
+{% endblock %}

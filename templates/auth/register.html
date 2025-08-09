@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>تسجيل حساب</title>
+</head>
+<body>
+    <h2>تسجيل حساب جديد</h2>
+    <form method="POST">
+        <input type="text" name="username" placeholder="اسم المستخدم" required><br>
+        <input type="email" name="email" placeholder="الإيميل" required><br>
+        <input type="password" name="password" placeholder="كلمة السر" required><br>
+        <button type="submit">سجل</button>
+    </form>
+    <p>عندك حساب؟ <a href="{{ url_for('auth.login') }}">سجل دخول</a></p>
+</body>
+</html>

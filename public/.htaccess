@@ -1,0 +1,32 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # حماية الملفات الحساسة
+    <FilesMatch "(\.env|\.htaccess|config\.php|database\.php)">
+        Require all denied
+    </FilesMatch>
+    
+    # منع الوصول المباشر إلى مجلدات معينة
+    RedirectMatch 403 ^/admin/includes/.*$
+    RedirectMatch 403 ^/config/.*$
+    RedirectMatch 403 ^/system/.*$
+    RedirectMatch 403 ^/includes/.*$
+    
+    # إعادة توجيه جميع الطلبات إلى index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ /public/index.php [L]
+    
+    # إعدادات الأمان
+    Options -Indexes
+    ServerSignature Off
+</IfModule>
+
+# إعدادات PHP
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 10M
+    php_value post_max_size 12M
+    php_value memory_limit 256M
+    php_value max_execution_time 120
+    php_value max_input_time 60
+</IfModule>
